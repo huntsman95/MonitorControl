@@ -52,3 +52,20 @@ Send arbitrary VCP codes (see DDCI_documentation_mccsV3.pdf)
 # Set Brightness to 100%
 Set-VCP -MonitorName '\\.\DISPLAY1' -VCPCode 0x10 -VCPValue 100
 ```
+
+## BETA FEATURES
+
+### Remove-Display
+Detaches a monitor effectively turning it off
+```powershell
+Remove-Display -DisplayName '\\.\DISPLAY1'
+```
+
+### Set-Display
+Reattaches a monitor or allows you to set resolution/refresh-rate on a monitor already attached and in-use
+```powershell
+Set-Display -DisplayName '\\.\DISPLAY1' -ResolutionWidth 1920 -ResolutionHeight 1080 -RefreshRate 60
+```
+
+### Known Issues
+The STRUCT used for DEVMODE does not contain the UNION needed for setting position so if your displays aren't oriented in `1 - 2 - 3` order, adding them back might put them out-of-order. I'm trying to figure out how to get this to work properly as it requires unsafe code which throws a memory access violation when trying to set the position.

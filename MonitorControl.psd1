@@ -12,7 +12,7 @@
     RootModule        = 'MonitorControl.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '1.0'
+    ModuleVersion     = '1.1'
 
     # Supported PSEditions
     # CompatiblePSEditions = @()
@@ -76,7 +76,9 @@
         'Set-MonitorBrightness',
         'Set-MonitorPowerMode',
         'Set-MonitorInput',
-        'Invoke-AllMonitorsStandbyMode'
+        'Invoke-AllMonitorsStandbyMode',
+        'Remove-Display',
+        'Set-Display'
     )
 
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.

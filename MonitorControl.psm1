@@ -1,4 +1,5 @@
 Add-Type -TypeDefinition (Get-Content -Path "$PSScriptRoot\private\monitor.cs" -Raw)
+Add-Type -TypeDefinition (Get-Content -Path "$PSScriptRoot\private\display.cs" -Raw)
 
 function Get-PhysMonitorHandles {
     param(
@@ -219,5 +220,70 @@ function Set-MonitorInput {
     }
     process {
         Set-VCP -MonitorName $MonitorName -VCPCode 0x60 -VCPValue $Inputs[$InputName]
+    }
+}
+
+function Remove-Display {
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [string]
+        $DisplayName
+    )
+    [DisplayControl.Functions]::DetachDisplay($DisplayName)
+}
+
+function Set-Display {
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [string]
+        $DisplayName,
+        [Parameter()]
+        [int]
+        $ResolutionWidth,
+        [Parameter()]
+        [int]
+        $ResolutionHeight,
+        [Parameter()]
+        [int]
+        $RefreshRate
+    )
+    process {
+        $devmode1 = [DisplayControl.DEVMODE1]::new()
+        $devmode1.dmSize = [System.Runtime.InteropServices.Marshal]::SizeOf($devmode1)
+
+        $devmode1arr = [System.Collections.Generic.List[DisplayControl.DEVMODE1]]::new()
+
+        $i = 0
+        while ([DisplayControl.User32]::EnumDisplaySettingsEx($DisplayName, $i, [ref] $devmode1, 0)) {
+            $devmode1arr.Add($devmode1)
+            $i++
+        }
+
+        $devmode1_tmp = $devmode1arr.where({ $_.dmPelsHeight -eq $ResolutionHeight -and $_.dmPelsWidth -eq $ResolutionWidth -and $_.dmDisplayFrequency -eq $RefreshRate })
+        if ($devmode1_tmp.count -ge 1) {
+            $devmode1 = $devmode1_tmp[0]
+        }
+        else {
+            throw 'No matching display mode found'
+        }
+
+        $updateflags = [DisplayControl.User32+ChangeDisplaySettingsFlags]::CDS_UPDATEREGISTRY -bor [DisplayControl.User32+ChangeDisplaySettingsFlags]::CDS_NORESET
+        $updateflags2 = [DisplayControl.User32+ChangeDisplaySettingsFlags]::CDS_UPDATEREGISTRY -bor [DisplayControl.User32+ChangeDisplaySettingsFlags]::CDS_RESET
+
+
+        $res1 = [DisplayControl.User32]::ChangeDisplaySettingsEx($DisplayName, [ref] $devmode1, [System.IntPtr]::Zero, $updateflags, [System.IntPtr]::Zero)
+        $res2 = [DisplayControl.User32]::ChangeDisplaySettingsEx($DisplayName, [ref] $devmode1, [System.IntPtr]::Zero, $updateflags2, [System.IntPtr]::Zero)
+
+        if ($res1 -ne 0 -or $res2 -ne 0) {
+            throw "Failed to set display mode for display: $DisplayName"
+        }
+        else {
+            [PSCustomObject]@{
+                DisplayName = $DisplayName
+                Success     = $true
+            }
+        }
     }
 }
